@@ -62,15 +62,14 @@ async function updatePullRequestChecks(context: PRContext) {
   }
 }
 async function updateFollowingBranchRef(context: PRContext) {
-  if (!utils.branchExists(context.octokit, context.payload.number, context.repo()))
-    return;
-
-  const branchName = utils.branchNameForPR(context.payload.number);
-  await context.octokit.git.updateRef(context.repo({
-    ref: `heads/${branchName}`,
-    sha: context.payload.pull_request.head.sha,
-    force: true
-  }));
+  try {
+    const branchName = utils.branchNameForPR(context.payload.number);
+    await context.octokit.git.updateRef(context.repo({
+      ref: `heads/${branchName}`,
+      sha: context.payload.pull_request.head.sha,
+      force: true
+    }));
+  } catch (err) { }
 }
 async function deleteFollowingBranchRef(context: PRContext) {
   const branchName = utils.branchNameForPR(context.payload.number);
@@ -108,7 +107,7 @@ async function deleteFollowingBranchRef(context: PRContext) {
     await context.octokit.git.deleteRef(context.repo({
       ref: `heads/${branchName}`
     }));
-  } catch (err) { 
+  } catch (err) {
     // This isn't actually an error since the ref might not exist
   }
 }
