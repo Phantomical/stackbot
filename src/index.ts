@@ -26,8 +26,10 @@ async function updatePullRequestChecks(context: PRContext) {
   let basePullId = utils.extractBasePRId(context.payload.pull_request.body);
 
   let payload;
-  if (basePullId == null
-    || context.payload.pull_request.base.ref != utils.branchNameForPR(basePullId)) {
+  let hasNoDeps = basePullId == null
+    || context.payload.pull_request.base.ref != utils.branchNameForPR(basePullId);
+
+  if (hasNoDeps) {
     payload = {
       status: "completed",
       conclusion: "success",
@@ -60,6 +62,23 @@ async function updatePullRequestChecks(context: PRContext) {
       ...payload
     }));
   }
+
+  let labels = context.payload.pull_request.labels;
+  let hasLabel = labels.some((label) => {
+    return label.name == "stacked";
+  });
+
+  await utils.tryRun(context, async () => {
+    if (!hasNoDeps && !hasLabel) {
+      await context.octokit.issues.addLabels(context.issue({
+        labels: ["stacked"]
+      }));
+    } else if (hasNoDeps && hasLabel) {
+      await context.octokit.issues.removeLabel(context.issue({
+        name: "stacked"
+      }));
+    }
+  });
 }
 async function updateFollowingBranchRef(context: PRContext) {
   try {
