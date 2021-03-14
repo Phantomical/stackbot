@@ -4,7 +4,7 @@ import { EventPayloads } from "probot/node_modules/@octokit/webhooks/dist-types/
 
 import utils from './utils';
 
-// const BOT_NAME = "phantomical-pr-stackbot";
+const BOT_NAME = "phantomical-pr-stacker";
 const CHECK_NAME = "stacked-dependencies";
 
 type PRContext = WebhookEvent<EventPayloads.WebhookPayloadPullRequest>
@@ -124,6 +124,10 @@ async function deleteFollowingBranchRef(context: PRContext) {
   } while (results.data.items.length == 100);
 
   try {
+    await context.octokit.repos.deleteBranchProtection(context.repo({
+      branch: branchName
+    }));
+
     await context.octokit.git.deleteRef(context.repo({
       ref: `heads/${branchName}`
     }));
@@ -162,6 +166,23 @@ async function createFollowingBranchRefForBase(context: PRContext) {
 
   await context.octokit.pulls.update(context.pullRequest({
     base: branchName
+  }));
+
+  await context.octokit.repos.updateBranchProtection(context.repo({
+    branch: branchName,
+    required_status_checks: {
+      strict: true,
+      contexts: [ CHECK_NAME ]
+    },
+    enforce_admins: true,
+    required_pull_request_reviews: null,
+    restrictions: {
+      users: [],
+      teams: [],
+      apps: [ BOT_NAME ]
+    },
+    allow_force_pushes: true,
+    allow_deletions: false
   }));
 }
 async function unstackPullRequestIfCommentRemoved(context: PRContext) {
