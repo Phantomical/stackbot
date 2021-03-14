@@ -68,6 +68,7 @@ async function updatePullRequestChecks(context: PRContext) {
     return label.name == "stacked";
   });
 
+  // TODO: Create the label if it doesn't exist
   await utils.tryRun(context, async () => {
     if (!hasNoDeps && !hasLabel) {
       await context.octokit.issues.addLabels(context.issue({
@@ -137,6 +138,10 @@ async function createFollowingBranchRefForBase(context: PRContext) {
   if (basePullId == null)
     return;
 
+  // If the base PR is the current PR then don't do anything
+  if (basePullId == context.payload.number)
+    return;
+
   const branchName = utils.branchNameForPR(basePullId);
 
   // PR is already stacked, do nothing
@@ -169,6 +174,11 @@ async function unstackPullRequestIfCommentRemoved(context: PRContext) {
 
   let currentBase = utils.extractBasePRId(context.payload.pull_request.body);
   let prevBase = utils.extractBasePRId(payload.changes.body.from);
+
+  if (currentBase === context.payload.number)
+    currentBase = null;
+  if (prevBase === context.payload.number)
+    prevBase = null;
 
   if (!(currentBase == null && prevBase != null))
     return;
