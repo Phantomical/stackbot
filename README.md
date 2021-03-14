@@ -1,6 +1,6 @@
-# phantomical-pr-stacker
+# stackbot
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that An app to manage stacks of PRs
+> A GitHub App built with [Probot](https://github.com/probot/probot) that manages stacks of PRs.
 
 ## Setup
 
