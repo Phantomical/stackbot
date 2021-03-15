@@ -27,7 +27,8 @@ async function updatePullRequestChecks(context: PRContext) {
 
   let payload;
   let hasNoDeps = basePullId == null
-    || context.payload.pull_request.base.ref != utils.branchNameForPR(basePullId);
+    || (context.payload.pull_request.base.ref != utils.branchNameForPR(basePullId)
+      && context.payload.action != "opened");
 
   if (hasNoDeps) {
     payload = {
@@ -172,14 +173,14 @@ async function createFollowingBranchRefForBase(context: PRContext) {
     branch: branchName,
     required_status_checks: {
       strict: true,
-      contexts: [ CHECK_NAME ]
+      contexts: [CHECK_NAME]
     },
     enforce_admins: true,
     required_pull_request_reviews: null,
     restrictions: {
       users: [],
       teams: [],
-      apps: [ BOT_NAME ]
+      apps: [BOT_NAME]
     },
     allow_force_pushes: true,
     allow_deletions: false
