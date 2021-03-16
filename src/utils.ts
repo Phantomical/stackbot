@@ -50,7 +50,11 @@ async function createFollowerBranch(
       sha: pull_sha,
       ...context
     });
-  } catch (err) { }
+
+    return true;
+  } catch (err) { 
+    return false;
+  }
 }
 
 async function tryRun<R>(context: Context, func: () => Promise<R>): Promise<R | null> {

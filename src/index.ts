@@ -133,6 +133,7 @@ async function deleteFollowingBranchRef(context: PRContext) {
       ref: `heads/${branchName}`
     }));
   } catch (err) {
+    context.log.error(`Unable to delete branch: ${err}`)
     // This isn't actually an error since the ref might not exist
   }
 }
@@ -162,29 +163,31 @@ async function createFollowingBranchRefForBase(context: PRContext) {
   if (basePR == null || basePR.data.state == "closed")
     return;
 
-  await utils.createFollowerBranch(
+  let branchCreated = await utils.createFollowerBranch(
     context.octokit, basePullId, basePR.data.head.sha, context.pullRequest());
 
   await context.octokit.pulls.update(context.pullRequest({
     base: branchName
   }));
 
-  await context.octokit.repos.updateBranchProtection(context.repo({
-    branch: branchName,
-    required_status_checks: {
-      strict: true,
-      contexts: [CHECK_NAME]
-    },
-    enforce_admins: true,
-    required_pull_request_reviews: null,
-    restrictions: {
-      users: [],
-      teams: [],
-      apps: [BOT_NAME]
-    },
-    allow_force_pushes: true,
-    allow_deletions: false
-  }));
+  if (branchCreated) {
+    await context.octokit.repos.updateBranchProtection(context.repo({
+      branch: branchName,
+      required_status_checks: {
+        strict: true,
+        contexts: [CHECK_NAME]
+      },
+      enforce_admins: true,
+      required_pull_request_reviews: null,
+      restrictions: {
+        users: [],
+        teams: [],
+        apps: [BOT_NAME]
+      },
+      allow_force_pushes: true,
+      allow_deletions: false
+    }));
+  }
 }
 async function unstackPullRequestIfCommentRemoved(context: PRContext) {
   let payload: any = context.payload;
