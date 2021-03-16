@@ -124,18 +124,17 @@ async function deleteFollowingBranchRef(context: PRContext) {
     page += 1;
   } while (results.data.items.length == 100);
 
-  try {
+  await utils.tryRun(context, async () => {
     await context.octokit.repos.deleteBranchProtection(context.repo({
       branch: branchName
     }));
+  });
 
+  await utils.tryRun(context, async () => {
     await context.octokit.git.deleteRef(context.repo({
       ref: `heads/${branchName}`
     }));
-  } catch (err) {
-    context.log.error(`Unable to delete branch: ${err}`)
-    // This isn't actually an error since the ref might not exist
-  }
+  });
 }
 async function createFollowingBranchRefForBase(context: PRContext) {
   let basePullId = utils.extractBasePRId(context.payload.pull_request.body);
