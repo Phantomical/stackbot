@@ -27,8 +27,7 @@ async function updatePullRequestChecks(context: PRContext) {
 
   let payload;
   let hasNoDeps = basePullId == null
-    || (context.payload.pull_request.base.ref != utils.branchNameForPR(basePullId)
-      && context.payload.action != "opened");
+    || (/stackbot\/pr-[0-9]+/.exec(context.payload.pull_request.base.ref) == null);
 
   if (hasNoDeps) {
     payload = {
