@@ -4,7 +4,7 @@ import { EventPayloads } from "probot/node_modules/@octokit/webhooks/dist-types/
 
 import utils from './utils';
 
-// const BOT_NAME = "phantomical-pr-stacker";
+const BOT_NAME = "phantomical-pr-stacker";
 const CHECK_NAME = "stacked-dependencies";
 
 type PRContext = WebhookEvent<EventPayloads.WebhookPayloadPullRequest>
@@ -177,9 +177,13 @@ async function createFollowingBranchRefForBase(context: PRContext) {
       },
       enforce_admins: true,
       required_pull_request_reviews: null,
-      restrictions: null,
+      restrictions: {
+        users: [],
+        teams: [],
+        apps: [ BOT_NAME ]
+      },
       allow_force_pushes: true,
-      // allow_deletions: false
+      allow_deletions: false
     }));
   }
 }
