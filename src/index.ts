@@ -173,18 +173,14 @@ async function createFollowingBranchRefForBase(context: PRContext) {
     await context.octokit.repos.updateBranchProtection(context.repo({
       branch: branchName,
       required_status_checks: {
-        strict: true,
+        strict: false,
         contexts: [CHECK_NAME]
       },
       enforce_admins: true,
       required_pull_request_reviews: null,
-      restrictions: {
-        users: [],
-        teams: [],
-        apps: [BOT_NAME]
-      },
+      restrictions: null,
       allow_force_pushes: true,
-      allow_deletions: false
+      // allow_deletions: false
     }));
   }
 }
