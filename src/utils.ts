@@ -61,6 +61,10 @@ async function tryRun<R>(context: Context, func: () => Promise<R>): Promise<R | 
   try {
     return await func();
   } catch(err) {
+    context.log.error(`Error while processing event `
+      + `${context.name}.${context.payload.action}`
+      + `for PR ${context.payload.number ? context.payload.number : "null"}`
+    )
     context.log.error(err);
     return null;
   }
