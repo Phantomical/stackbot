@@ -4,7 +4,7 @@ import { EventPayloads } from "probot/node_modules/@octokit/webhooks/dist-types/
 
 import utils from './utils';
 
-const BOT_NAME = "phantomical-pr-stacker";
+// const BOT_NAME = "phantomical-pr-stacker";
 const CHECK_NAME = "stacked-dependencies";
 
 type PRContext = WebhookEvent<EventPayloads.WebhookPayloadPullRequest>
