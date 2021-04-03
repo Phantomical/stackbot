@@ -10,7 +10,7 @@ const CHECK_NAME = "stacked-dependencies";
 type PRContext = WebhookEvent<EventPayloads.WebhookPayloadPullRequest>
   & Omit<Context<any>, keyof WebhookEvent<any>>;
 
-async function updatePullRequestChecks(context: PRContext) {
+async function updatePullRequestChecks(context: PRContext, force: boolean = false) {
   let checkRuns = await context.octokit.checks.listForRef(context.repo({
     ref: context.payload.pull_request.head.sha,
     check_name: CHECK_NAME,
@@ -29,7 +29,7 @@ async function updatePullRequestChecks(context: PRContext) {
   let hasNoDeps = basePullId == null
     || (/stackbot\/pr-[0-9]+/.exec(context.payload.pull_request.base.ref) == null);
 
-  if (hasNoDeps) {
+  if (hasNoDeps && !force) {
     payload = {
       status: "completed",
       conclusion: "success",
@@ -135,22 +135,22 @@ async function deleteFollowingBranchRef(context: PRContext) {
     }));
   });
 }
-async function createFollowingBranchRefForBase(context: PRContext) {
+async function createFollowingBranchRefForBase(context: PRContext): Promise<boolean> {
   let basePullId = utils.extractBasePRId(context.payload.pull_request.body);
 
   // Do nothing if the PR comment doesn't contain a pull request marker.
   if (basePullId == null)
-    return;
+    return false;
 
   // If the base PR is the current PR then don't do anything
   if (basePullId == context.payload.number)
-    return;
+    return false;
 
   const branchName = utils.branchNameForPR(basePullId);
 
   // PR is already stacked, do nothing
   if (context.payload.pull_request.base.ref == branchName)
-    return;
+    return false;
 
   let basePR = await utils.tryRun(context, () => {
     return context.octokit.pulls.get(context.pullRequest({
@@ -159,7 +159,7 @@ async function createFollowingBranchRefForBase(context: PRContext) {
   });
 
   if (basePR == null || basePR.data.state == "closed")
-    return;
+    return false;
 
   let branchCreated = await utils.createFollowerBranch(
     context.octokit, basePullId, basePR.data.head.sha, context.pullRequest());
@@ -180,12 +180,14 @@ async function createFollowingBranchRefForBase(context: PRContext) {
       restrictions: {
         users: [],
         teams: [],
-        apps: [ BOT_NAME ]
+        apps: [BOT_NAME]
       },
       allow_force_pushes: true,
       allow_deletions: false
     }));
   }
+
+  return true;
 }
 async function unstackPullRequestIfCommentRemoved(context: PRContext) {
   let payload: any = context.payload;
@@ -217,12 +219,12 @@ export = (app: Probot) => {
   });
 
   app.on("pull_request.opened", async (context) => {
-    await utils.tryRun(context, async () => {
-      await createFollowingBranchRefForBase(context);
+    const force_check = await utils.tryRun(context, async () => {
+      return await createFollowingBranchRefForBase(context);
     });
 
     await utils.tryRun(context, async () => {
-      await updatePullRequestChecks(context);
+      await updatePullRequestChecks(context, force_check || false);
     });
   });
   app.on("pull_request.edited", async (context) => {
