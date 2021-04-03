@@ -228,12 +228,12 @@ export = (app: Probot) => {
     });
   });
   app.on("pull_request.edited", async (context) => {
-    await utils.tryRun(context, async () => {
-      await createFollowingBranchRefForBase(context);
+    const force_check = await utils.tryRun(context, async () => {
+      return await createFollowingBranchRefForBase(context);
     });
 
     await utils.tryRun(context, async () => {
-      await updatePullRequestChecks(context);
+      await updatePullRequestChecks(context, force_check || false);
     });
 
     await utils.tryRun(context, async () => {
